@@ -70,6 +70,7 @@ void settingVertexAttributes(int *startingIndexOfRows, int *columnIndices, Verte
 
 }
 
+/*
 /* sorting'te hata var gibi ---> (93. satır) if(vertices[nextNeighbourIndex].color < vertices[currentVertex.neighboursIndices[minColorIndex]].color)*/
 int coloringAllVertices(Vertex *vertices, int numberOfVertices, int checkingStillUncolored) {
 
@@ -140,3 +141,4 @@ int coloringAllVertices(Vertex *vertices, int numberOfVertices, int checkingStil
 	return checkingStillUncolored;
 
 }
+*/
