@@ -71,7 +71,7 @@ void settingVertexAttributes(int *startingIndexOfRows, int *columnIndices, Verte
 }
 
 /*
-/* sorting'te hata var gibi ---> (93. satır) if(vertices[nextNeighbourIndex].color < vertices[currentVertex.neighboursIndices[minColorIndex]].color)*/
+// sorting'te hata var gibi ---> (93. satır) if(vertices[nextNeighbourIndex].color < vertices[currentVertex.neighboursIndices[minColorIndex]].color)
 int coloringAllVertices(Vertex *vertices, int numberOfVertices, int checkingStillUncolored) {
 
 	for(int i=0; i<numberOfVertices; i++) {
@@ -81,7 +81,7 @@ int coloringAllVertices(Vertex *vertices, int numberOfVertices, int checkingStil
 		if(currentVertex.count == 0) { // says that it is time to color this vertex.
 			if(currentVertex.color == -1) { // we skip the colored vertices.
 				
-				/* Finding the min color that the neighbours of the current vertex don't have */
+				// Finding the min color that the neighbours of the current vertex don't have 
 				
 				// we sort the neighboursIndices array according to the their colors.
 				for(int k=0; k < currentVertex.arraySize-1; k++) {
