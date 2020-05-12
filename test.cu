@@ -33,6 +33,62 @@ int main(int argc, char **argv) {
 	
 	cudaError_t error;
 
+	int numberOfVerticesToBeColored = 0;
+	// In this for loop, the number of vertices, having count value as 0, is determined.
+	for(int i=0; i<numberOfVertices; i++) {
+		if(vertices[i].count == 0) 
+			numberOfVerticesToBeColored++;
+	}
+
+	// Allocation on host memory for vertices that will be colored.
+	Vertex *verticesToBeColored = (Vertex *) malloc(sizeof(Vertex) * numberOfVerticesToBeColored);
+
+	// Allocation on host memory for neighbor sizes of vertices(INPUT).
+	int *h_neighborSizeArray = (int *) malloc(sizeof(int) * numberOfVerticesToBeColored);
+	
+	// Memory allocation on host for the colors(OUTPUT).
+	int *h_colorsFound = (int *) malloc(sizeof(int) * numberOfVerticesToBeColored);
+
+	// Checking if there were any failures while allocating host data.
+	if(h_neighborSizeArray == NULL || h_colorsFound == NULL) {
+		fprintf(stderr, "Failed to allocate host data!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	// Setting verticesToBeColored and h_neighborSizeArray.
+	int totalNumberOfNeighbors = 0, individualNeighborNumber = 0;
+	for(int i=0, j=0; i<numberOfVertices; i++) {
+		if(vertices[i].count == 0) {
+			verticesToBeColored[j] = vertices[i];
+			individualNeighborNumber = vertices[i].arraySize;
+			h_neighborSizeArray[j] = individualNeighborNumber;
+			totalNumberOfNeighbors += individualNeighborNumber; //Accumulating the neighbor size of each vertex to obtain the total for memory allocation. 
+			j++;
+		}
+	}
+
+	// Memory allocation on host for all neighbors of all vertices(INPUT).
+	Vertex *h_neighborsOfAllVertices = (Vertex *) malloc(sizeof(Vertex) * totalNumberOfNeighbors);
+
+	// Checking if there were any failures while allocating host data.
+	if(h_neighborsOfAllVertices == NULL) {
+		fprintf(stderr, "Failed to allocate host data!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	// Setting h_neighborsOfAllVertices. 
+	int cumulativeIndex = 0;
+	for(int i=0; i<numberOfVerticesToBeColored; i++) {
+		int neighborSize = h_neighborSizeArray[i];
+		for(int j=0; j<neighborSize; j++) {
+			h_neighborsOfAllVertices[cumulativeIndex] = vertices[verticesToBeColored[i].neighboursIndices[j]];
+			cumulativeIndex++;
+		}
+	}
+
+
+	
+	/*
 	for(int i=0; i<numberOfVertices; i++) {
 		
 		// Select the i.th Vertex to be colored.
@@ -140,7 +196,7 @@ int main(int argc, char **argv) {
 		free(h_neighbors);
 		free(h_color);
 
-	}
+	}*/
 
 	printf("DONE\n");
 
