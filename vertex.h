@@ -15,7 +15,6 @@ typedef struct vertex Vertex;
 
 Vertex* createVertices(int numberOfVertices);
 void settingVertexAttributes(int *startingIndexOfRows, int *columnIndices, Vertex *vertices, int numberOfVertices);
-//int coloringAllVertices(Vertex *vertices, int numberOfVertices, int checkingStillUncolored);
 
 
 

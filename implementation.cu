@@ -1,6 +1,6 @@
 #include "implementation.h"
 
-__global__ void find_the_color(Vertex *neighborsForAllVertices, const int *neighborSizeArray, int current_phase, int *colors_found) {
+__global__ void find_the_color(Vertex *neighborsForAllVertices, int *neighborSizeArray, int current_phase, int *colors_found) {
 
 	int starting_index_for_neighbors = 0; // showing the starting index of the specific neighbor set which differs for each block.
 	int local_blockId = blockIdx.x;	
@@ -10,10 +10,8 @@ __global__ void find_the_color(Vertex *neighborsForAllVertices, const int *neigh
 		local_blockId--;
 	}
 
-	//int idx = threadIdx.x + blockIdx.x * blockDim.x; //NOTE: use just threadIdx.x
-
-	//const int thread_number = 2; //NOTE: instead of declaring a variable, use blockDim.x
-	__shared__ long long int registers_pointer[blockDim.x][4];
+	const int thread_number = 2;
+	__shared__ long long int registers_pointer[thread_number][4];
 	long long int registers[4] = {0, 0, 0, 0}; // local array storing 4 64-bit integer registers.
 
 	// iterating all the neigbors of each vertex.
