@@ -62,6 +62,11 @@ int main(int argc, char **argv) {
 			exit(EXIT_FAILURE);
 		}
 
+		// Initializing h_colors_found with -1.
+		for(int i=0; i<numberOfVerticesToBeColored; i++) {
+			h_colors_found[i] = -1;
+		}
+
 		// Setting verticesToBeColored and h_neighborSizeArray.
 		int totalNumberOfNeighbors = 0, individualNeighborNumber = 0;
 		for(int i=0, j=0; i<numberOfVertices; i++) {
@@ -121,6 +126,15 @@ int main(int argc, char **argv) {
 			exit(EXIT_FAILURE);
 		}
 		
+		// Copying of colors from host to device.
+		printf("Copy colors from the host memory to the CUDA device\n");
+		error = cudaMemcpy(d_colors_found, h_colors_found, numberOfVerticesToBeColored * sizeof(int), cudaMemcpyHostToDevice);
+
+		if(error != cudaSuccess) {
+			fprintf(stderr, "Failed to copy h_colors_found to device (error code %s)!\n", cudaGetErrorString(error));
+			exit(EXIT_FAILURE);
+		}
+
 		//Copying of all neighbors from host to device.
 		printf("Copy all neighbors from the host memory to the CUDA device\n");
 		error = cudaMemcpy(d_neighborsOfAllVertices, h_neighborsOfAllVertices, neighborsSizeInBytes, cudaMemcpyHostToDevice);
@@ -218,12 +232,13 @@ int main(int argc, char **argv) {
 			exit(EXIT_FAILURE);
 		}
 
-		printf("DELETE FOR DEVICE\n");
+		printf("DELETED ALLOCATED MEMORY FOR DEVICE\n");
+
 		// Free host memory
 		free(h_neighborsOfAllVertices);
 		free(h_neighborSizeArray);
 		free(h_colors_found);
-		printf("DELETE FOR HOST \n");
+		printf("DELETED ALLOCATED MEMORY FOR HOST \n");
 
 	}
 
