@@ -14,9 +14,9 @@ Vertex* createVertices(int numberOfVertices) {
 		vertices[i].vertexIndex = currentIndex++;
 
 		// we have the following do-while to prevent having the same random values.
-		int havingRandomValue = 0;
+		int havingRandomValue = 0, upperLimit = numberOfVertices*5; // To make the assignment of random values easy, enlarge the range.
 		while(!havingRandomValue) { // random value yok iken, while'da dönecek.
-			int currentRandomValue = (rand() % 200) + 1; // 1'den 200'e kadar sınır.
+			int currentRandomValue = (rand() % upperLimit) + 1; // 1'den upperLimit'e kadar sınır.
 			for(int j=0; j<numberOfVertices-1; j++) { // "numberOfVertices-1" olmasının sebebi : sonuncu vertex'in rengini tutmaya gerek yok kontrol etmek için.
 				if(randomValues[j] == 0 || (j == numberOfVertices-2)) { // 2. logical expression sonuncu vertex'in random değerine mi geldi ona bakıcak.
 					if(randomValues[j] == 0)
@@ -37,7 +37,7 @@ Vertex* createVertices(int numberOfVertices) {
 		vertices[i].neighboursIndices = NULL;
 		vertices[i].arraySize = 0;
 		vertices[i].color = -1;
-		printf("V%d --> %d\n", i, vertices[i].randomValue);
+		//printf("V%d --> %d\n", i, vertices[i].randomValue);
 	}
 	
 	free(randomValues);

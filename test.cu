@@ -1,9 +1,12 @@
+#include <string.h>
+#include "mtx2csr.h"
 #include "implementation.h"
+#include "common.h"
 /*
 ---COMPILATION COMMANDS----
-$ nvcc vertex.cpp implementation.cu -c
-$ nvcc vertex.o implementation.o test.cu -o TEST
-$ ./TEST
+$ nvcc vertex.cpp mtx2csr.cpp implementation.cu -c
+$ nvcc vertex.o mtx2csr.o implementation.o test.cu -o TEST
+$ ./TEST <graph-name>
 */
 
 int main(int argc, char **argv) {
@@ -11,10 +14,30 @@ int main(int argc, char **argv) {
 	// manually entered samples
 	//int startingIndexOfRows[5] = {0,2,4,6,8};
 	//int columnIndices[8] = {1,3,0,2,1,3,0,2};
-	int startingIndexOfRows[9] = {0, 3, 6, 9, 12, 14, 16, 19, 22};
-	int columnIndices[22] = {1, 2, 7, 0, 3, 6, 0, 4, 5, 1, 6, 7, 2, 7, 2, 6, 1, 3, 5, 0, 3, 4};
 
-	int numberOfVertices = (sizeof(startingIndexOfRows) / sizeof(int)) - 1;
+	// Reading real data.
+	if(argc != 2) {
+		printf("Usage: %s <graph>\n", argv[0]);
+		exit(1);
+	}
+
+	int numberOfVertices, nnz, *startingIndexOfRows = NULL, *columnIndices = NULL;
+	if(strstr(argv[1], ".mtx"))
+		mtx2csr(argv[1], numberOfVertices, nnz, startingIndexOfRows, columnIndices);
+	else {
+		printf("Unrecognizable input file format\n");
+		exit(0);
+	}
+
+	if (startingIndexOfRows == NULL)
+		printf("startingIndexOfRows is NULL\n");
+	if (columnIndices == NULL)
+		printf("columnIndices is NULL\n");
+
+	//int startingIndexOfRows[9] = {0, 3, 6, 9, 12, 14, 16, 19, 22};
+	//int columnIndices[22] = {1, 2, 7, 0, 3, 6, 0, 4, 5, 1, 6, 7, 2, 7, 2, 6, 1, 3, 5, 0, 3, 4};
+
+	//int numberOfVertices = (sizeof(startingIndexOfRows) / sizeof(int)) - 1;
 
 	// Creating all the vertices.
 	Vertex *vertices = createVertices(numberOfVertices);
@@ -30,8 +53,20 @@ int main(int argc, char **argv) {
 			printf("neighbour[%d]: %d\n", j, currentVertex.neighboursIndices[j]);
 		}
 	}*/
-	
+	/*
+	// For cuda events.
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	*/
+
+	// To measure time elapsed in the kernel function.
+	double t1, t2, total_elapsed_time = 0.0;
+	//float total_elapsed_time = 0.0f;
+	int max_color = 0;
+
 	while(true) {
+
 		cudaError_t error;
 
 		int numberOfVerticesToBeColored = 0;
@@ -154,11 +189,23 @@ int main(int argc, char **argv) {
 		}
 
 		int current_phase = 0;
+		int threads_per_block = 32;
 		// Here, the current phase is incremented by 1 until all vertices to be colored find their appropriate colors.
 		while(true) {
 
 			printf("CUDA kernel launch in %d.phase\n", current_phase);
-			find_the_color<<<numberOfVerticesToBeColored, 2>>>(d_neighborsOfAllVertices, d_neighborSizeArray, current_phase, d_colors_found);
+			t1 = rtclock();
+			//cudaEventRecord(start);
+			find_the_color<<<numberOfVerticesToBeColored, threads_per_block>>>(d_neighborsOfAllVertices, d_neighborSizeArray, current_phase, d_colors_found);
+			t2 = rtclock();
+			//cudaEventRecord(stop);
+			/*
+			cudaEventSynchronize(stop);
+			float milliseconds = 0;
+			cudaEventElapsedTime(&milliseconds, start, stop);
+			total_elapsed_time += milliseconds;
+			*/
+			total_elapsed_time += 1000.0f * (t2 - t1);
 
 			error = cudaGetLastError();
 
@@ -182,17 +229,25 @@ int main(int argc, char **argv) {
 			int numberOfUncoloredVertices = 0;
 			for(int i=0; i<numberOfVerticesToBeColored; i++) {
 				if(h_colors_found[i] != -1) {
-					int index = verticesToBeColored[i].vertexIndex;
-					int color = h_colors_found[i];
-					printf("color of V[%d] = %d\n", index, color);
-					vertices[index].color = color; // setting the color.
+					if(h_colors_found[i] >= 256*current_phase+1 && h_colors_found[i] <= 256*(current_phase+1)) {
+						int index = verticesToBeColored[i].vertexIndex;
+						int color = h_colors_found[i];
+						printf("color of V[%d] = %d\n", index, color);
+						vertices[index].color = color; // setting the color.
+						// To find the maximum color used.
+						if(color > max_color) {
+							max_color = color;
+						}
 
-					// Decrement neighbor's count values by 1.
-					int neighborSize = vertices[index].arraySize;
-					for(int j=0; j<neighborSize; j++) {
-						if(vertices[vertices[index].neighboursIndices[j]].count > 0)
-							vertices[vertices[index].neighboursIndices[j]].count--;
+						// Decrement neighbor's count values by 1.
+						int neighborSize = vertices[index].arraySize;
+						for(int j=0; j<neighborSize; j++) {
+							printf("N_id: %d, N_color: %d\n",vertices[index].neighboursIndices[j], vertices[vertices[index].neighboursIndices[j]].color);
+							if(vertices[vertices[index].neighboursIndices[j]].count > 0)
+								vertices[vertices[index].neighboursIndices[j]].count--;
+						}
 					}
+					
 				}
 				else {
 					numberOfUncoloredVertices++;
@@ -241,7 +296,15 @@ int main(int argc, char **argv) {
 		printf("DELETED ALLOCATED MEMORY FOR HOST \n");
 
 	}
+	/*
+	cudaEventRecord(stop);
 
+	cudaEventSynchronize(stop);
+	float milliseconds = 0;
+	cudaEventElapsedTime(&milliseconds, start, stop);
+	*/
+	printf("-----ELAPSED TIME ---> %f ms\n", total_elapsed_time);
+	printf("max color value: %d\n", max_color);
 
 	printf("DONE\n");
 

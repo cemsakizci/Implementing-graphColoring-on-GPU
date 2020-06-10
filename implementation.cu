@@ -12,7 +12,7 @@ __global__ void find_the_color(Vertex *neighborsForAllVertices, int *neighborSiz
 			local_blockId--;
 		}
 
-		const int thread_number = 2;
+		const int thread_number = 32;
 		__shared__ long long int registers_pointer[thread_number][4];
 		long long int registers[4] = {0, 0, 0, 0}; // local array storing 4 64-bit integer registers.
 
