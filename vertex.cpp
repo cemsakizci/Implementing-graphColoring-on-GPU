@@ -1,3 +1,21 @@
+// Implementation of the CJP algorithm, proposed by Nguyen Quang Anh Pham and Rui Fan, for parallel graph coloring on GPUs.
+// Copyright (C) 2020, Cem Sakızcı <sakizcicem@gmail.com>
+
+// This file is part of Implementing-graphColoring-on-GPU.
+
+// Implementing-graphColoring-on-GPU is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Implementing-graphColoring-on-GPU is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Implementing-graphColoring-on-GPU.  If not, see <http://www.gnu.org/licenses/>.
+
 #include"vertex.h"
 
 Vertex* createVertices(int numberOfVertices) {
@@ -15,10 +33,10 @@ Vertex* createVertices(int numberOfVertices) {
 
 		// we have the following do-while to prevent having the same random values.
 		int havingRandomValue = 0, upperLimit = numberOfVertices*5; // To make the assignment of random values easy, enlarge the range.
-		while(!havingRandomValue) { // random value yok iken, while'da dönecek.
-			int currentRandomValue = (rand() % upperLimit) + 1; // 1'den upperLimit'e kadar sınır.
-			for(int j=0; j<numberOfVertices-1; j++) { // "numberOfVertices-1" olmasının sebebi : sonuncu vertex'in rengini tutmaya gerek yok kontrol etmek için.
-				if(randomValues[j] == 0 || (j == numberOfVertices-2)) { // 2. logical expression sonuncu vertex'in random değerine mi geldi ona bakıcak.
+		while(!havingRandomValue) { // it will loop here until it gets a random value.
+			int currentRandomValue = (rand() % upperLimit) + 1; // the limit is from 1 to upperLimit.
+			for(int j=0; j<numberOfVertices-1; j++) { // the reason for "numberOfVertices-1" is that we don't have to store the color of the last vertex to check.
+				if(randomValues[j] == 0 || (j == numberOfVertices-2)) { // the second logical expression checks whether it has reached the random value of the last vertex or not.
 					if(randomValues[j] == 0)
 						randomValues[j] = currentRandomValue;
 					else if(randomValues[numberOfVertices-2] == currentRandomValue)
@@ -27,7 +45,7 @@ Vertex* createVertices(int numberOfVertices) {
 					havingRandomValue = 1;
 					break;
 				}
-				else if(randomValues[j] == currentRandomValue) // currentRandomValue önceden atanmış mı onu kontrol ediyor.
+				else if(randomValues[j] == currentRandomValue) // checking whether a currentRandomValue has assigned previously or not.
 					break;
 			}
 			
@@ -37,7 +55,7 @@ Vertex* createVertices(int numberOfVertices) {
 		vertices[i].neighboursIndices = NULL;
 		vertices[i].arraySize = 0;
 		vertices[i].color = -1;
-		//printf("V%d --> %d\n", i, vertices[i].randomValue);
+		//printf("V%d --> %d\n", i, vertices[i].randomValue); // to see the random value of each vertex.
 	}
 	
 	free(randomValues);

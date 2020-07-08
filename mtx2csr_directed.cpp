@@ -1,3 +1,21 @@
+// Implementation of the CJP algorithm, proposed by Nguyen Quang Anh Pham and Rui Fan, for parallel graph coloring on GPUs.
+// Copyright (C) 2020, Cem Sakızcı <sakizcicem@gmail.com>
+
+// This file is part of Implementing-graphColoring-on-GPU.
+
+// Implementing-graphColoring-on-GPU is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Implementing-graphColoring-on-GPU is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Implementing-graphColoring-on-GPU.  If not, see <http://www.gnu.org/licenses/>.
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -29,7 +47,7 @@ void mtx2csr(char *mtx, int &m, int &nnz, int *&csrRowPtr, int *&csrColInd) {
 		printf("error!\n");
 		exit(0);
 	}
-	printf("num_vertices %d, num_edges %d\n", m, nnz);
+	//printf("num_vertices %d, num_edges %d\n", m, nnz); // UNCOMMENT if you need to see this additional information.
 	vector<set<int> > svector;
 	set<int> s;
 	for (int i = 0; i < m; i++)
@@ -39,13 +57,14 @@ void mtx2csr(char *mtx, int &m, int &nnz, int *&csrRowPtr, int *&csrColInd) {
 		getline(cfile, str);
 		sscanf(str.c_str(), "%d %d", &dst, &src);
 
-		// Bu if'i sonradan ekledim.
+		// since the same vertex cannot be a neighbor of itself, we make the distinction inside this if statement.
 		if(dst != src) {
 			dst--;
 			src--;
 
 			svector[src].insert(dst);
-			//svector[dst].insert(src); // directed graph'larda (1,2) varken (2,1)'de var. Onun için bu satır gereksiz.
+			/* For directed graphs, if there is an occurence of (1,2), then (2,1) also exists explicitly in the graph. Therefore, no need to include the below line.*/
+			//svector[dst].insert(src);
 		}
 		
 	}
@@ -58,8 +77,8 @@ void mtx2csr(char *mtx, int &m, int &nnz, int *&csrRowPtr, int *&csrColInd) {
 	}
 	csrRowPtr[m] = count;
 	if (count != nnz) {
-		printf("The graph is not symmetric\n");
-		printf(">>>>>>>>>>>>>nnz is %d, count is %d\n", nnz, count);
+		//printf("The graph is not symmetric\n"); // UNCOMMENT if you need to see this additional information.
+		//printf(">>>>>>>>>>>>>nnz is %d, count is %d\n", nnz, count); // UNCOMMENT if you need to see this additional information.
 		nnz = count;
 		
 	}
@@ -87,7 +106,7 @@ void mtx2csr(char *mtx, int &m, int &nnz, int *&csrRowPtr, int *&csrColInd) {
 			mindeg = deg_i;
 		variance += (deg_i - avgdeg) * (deg_i - avgdeg) / m;
 	}
-	printf("mindeg %d maxdeg %d avgdeg %.2f variance %.2f\n", mindeg, maxdeg, avgdeg, variance);
+	//printf("mindeg %d maxdeg %d avgdeg %.2f variance %.2f\n", mindeg, maxdeg, avgdeg, variance); // UNCOMMENT if you need to see this additional information.
 	csrColInd = (int *)malloc(count * sizeof(int));
 	set<int>::iterator site;
 	for (int i = 0, index = 0; i < m; i++) {

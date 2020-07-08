@@ -1,19 +1,45 @@
+// Implementation of the CJP algorithm, proposed by Nguyen Quang Anh Pham and Rui Fan, for parallel graph coloring on GPUs.
+// Copyright (C) 2020, Cem Sakızcı <sakizcicem@gmail.com>
+
+// This file is part of Implementing-graphColoring-on-GPU.
+
+// Implementing-graphColoring-on-GPU is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Implementing-graphColoring-on-GPU is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Implementing-graphColoring-on-GPU.  If not, see <http://www.gnu.org/licenses/>.
+
 #include <string.h>
 #include "mtx2csr.h"
 #include "implementation.h"
 #include "common.h"
 /*
 ---COMPILATION COMMANDS----
-$ nvcc vertex.cpp mtx2csr.cpp implementation.cu -c
-$ nvcc vertex.o mtx2csr.o implementation.o test.cu -o TEST
+$ nvcc vertex.cpp (mtx2csr_undirected.cpp OR mtx2csr_directed.cpp) implementation.cu -c
+$ nvcc vertex.o (mtx2csr_undirected.o OR mtx2csr_directed.o) implementation.o test.cu -o TEST
 $ ./TEST <graph-name>
 */
 
 int main(int argc, char **argv) {
 
-	// manually entered samples
+	/* manually entered samples */
+
+	// Example-1
 	//int startingIndexOfRows[5] = {0,2,4,6,8};
 	//int columnIndices[8] = {1,3,0,2,1,3,0,2};
+
+	// Example-2
+	//int startingIndexOfRows[9] = {0, 3, 6, 9, 12, 14, 16, 19, 22};
+	//int columnIndices[22] = {1, 2, 7, 0, 3, 6, 0, 4, 5, 1, 6, 7, 2, 7, 2, 6, 1, 3, 5, 0, 3, 4};
+
+	//int numberOfVertices = (sizeof(startingIndexOfRows) / sizeof(int)) - 1;
 
 	// Reading real data.
 	if(argc != 2) {
@@ -34,11 +60,6 @@ int main(int argc, char **argv) {
 	if (columnIndices == NULL)
 		printf("columnIndices is NULL\n");
 
-	//int startingIndexOfRows[9] = {0, 3, 6, 9, 12, 14, 16, 19, 22};
-	//int columnIndices[22] = {1, 2, 7, 0, 3, 6, 0, 4, 5, 1, 6, 7, 2, 7, 2, 6, 1, 3, 5, 0, 3, 4};
-
-	//int numberOfVertices = (sizeof(startingIndexOfRows) / sizeof(int)) - 1;
-
 	// Creating all the vertices.
 	Vertex *vertices = createVertices(numberOfVertices);
 
@@ -53,16 +74,9 @@ int main(int argc, char **argv) {
 			printf("neighbour[%d]: %d\n", j, currentVertex.neighboursIndices[j]);
 		}
 	}*/
-	/*
-	// For cuda events.
-	cudaEvent_t start, stop;
-	cudaEventCreate(&start);
-	cudaEventCreate(&stop);
-	*/
-
-	// To measure time elapsed in the kernel function.
+	
+	// To measure the time elapsed in the kernel function.
 	double t1, t2, total_elapsed_time = 0.0;
-	//float total_elapsed_time = 0.0f;
 	int max_color = 0;
 
 	while(true) {
@@ -75,7 +89,7 @@ int main(int argc, char **argv) {
 			if(vertices[i].count == 0 && vertices[i].color == -1) 
 				numberOfVerticesToBeColored++;
 		}
-		printf("# VERTICES TO BE COLORED : %d\n", numberOfVerticesToBeColored);
+		//printf("# VERTICES TO BE COLORED : %d\n", numberOfVerticesToBeColored); // UNCOMMENT if you need to see this additional information.
 
 		// Checking if all vertices have been colored.
 		if(numberOfVerticesToBeColored == 0) {
@@ -162,7 +176,7 @@ int main(int argc, char **argv) {
 		}
 		
 		// Copying of colors from host to device.
-		printf("Copy colors from the host memory to the CUDA device\n");
+		//printf("Copy colors from the host memory to the CUDA device\n"); // UNCOMMENT if you need to see this additional information.
 		error = cudaMemcpy(d_colors_found, h_colors_found, numberOfVerticesToBeColored * sizeof(int), cudaMemcpyHostToDevice);
 
 		if(error != cudaSuccess) {
@@ -171,7 +185,7 @@ int main(int argc, char **argv) {
 		}
 
 		//Copying of all neighbors from host to device.
-		printf("Copy all neighbors from the host memory to the CUDA device\n");
+		//printf("Copy all neighbors from the host memory to the CUDA device\n"); // UNCOMMENT if you need to see this additional information.
 		error = cudaMemcpy(d_neighborsOfAllVertices, h_neighborsOfAllVertices, neighborsSizeInBytes, cudaMemcpyHostToDevice);
 
 		if(error != cudaSuccess) {
@@ -180,7 +194,7 @@ int main(int argc, char **argv) {
 		}
 
 		//Copying of neighborSizeArray from host to device.
-		printf("Copy neighborSizeArray from the host memory to the CUDA device\n");
+		//printf("Copy neighborSizeArray from the host memory to the CUDA device\n"); // UNCOMMENT if you need to see this additional information.
 		error = cudaMemcpy(d_neighborSizeArray, h_neighborSizeArray, numberOfVerticesToBeColored * sizeof(int), cudaMemcpyHostToDevice);
 
 		if(error != cudaSuccess) {
@@ -193,18 +207,11 @@ int main(int argc, char **argv) {
 		// Here, the current phase is incremented by 1 until all vertices to be colored find their appropriate colors.
 		while(true) {
 
-			printf("CUDA kernel launch in %d.phase\n", current_phase);
+			//printf("CUDA kernel launch in %d.phase\n", current_phase); // UNCOMMENT if you need to see this additional information.
 			t1 = rtclock();
-			//cudaEventRecord(start);
 			find_the_color<<<numberOfVerticesToBeColored, threads_per_block>>>(d_neighborsOfAllVertices, d_neighborSizeArray, current_phase, d_colors_found);
-			t2 = rtclock();
-			//cudaEventRecord(stop);
-			/*
-			cudaEventSynchronize(stop);
-			float milliseconds = 0;
-			cudaEventElapsedTime(&milliseconds, start, stop);
-			total_elapsed_time += milliseconds;
-			*/
+			t2 = rtclock();		
+
 			total_elapsed_time += 1000.0f * (t2 - t1);
 
 			error = cudaGetLastError();
@@ -215,7 +222,7 @@ int main(int argc, char **argv) {
 			}
 
 			// Copy d_colors_found to host.
-			printf("Copy d_colors_found from the CUDA device to the host memory\n");
+			//printf("Copy d_colors_found from the CUDA device to the host memory\n"); // UNCOMMENT if you need to see this additional information.
 			error = cudaMemcpy(h_colors_found, d_colors_found, sizeof(int) * numberOfVerticesToBeColored, cudaMemcpyDeviceToHost);
 
 			if(error != cudaSuccess) {
@@ -223,7 +230,7 @@ int main(int argc, char **argv) {
 				exit(EXIT_FAILURE);
 			}
 
-			printf("Copying has successfully completed\n");
+			//printf("Copying has successfully completed\n"); // UNCOMMENT if you need to see this additional information.
 
 			// Finding if any vertex from verticesToBeColored array could not be colored for the current phase.
 			int numberOfUncoloredVertices = 0;
@@ -232,7 +239,7 @@ int main(int argc, char **argv) {
 					if(h_colors_found[i] >= 256*current_phase+1 && h_colors_found[i] <= 256*(current_phase+1)) {
 						int index = verticesToBeColored[i].vertexIndex;
 						int color = h_colors_found[i];
-						printf("color of V[%d] = %d\n", index, color);
+						//printf("color of V[%d] = %d\n", index, color); // UNCOMMENT if you need to see this additional information.
 						vertices[index].color = color; // setting the color.
 						// To find the maximum color used.
 						if(color > max_color) {
@@ -242,7 +249,7 @@ int main(int argc, char **argv) {
 						// Decrement neighbor's count values by 1.
 						int neighborSize = vertices[index].arraySize;
 						for(int j=0; j<neighborSize; j++) {
-							printf("N_id: %d, N_color: %d\n",vertices[index].neighboursIndices[j], vertices[vertices[index].neighboursIndices[j]].color);
+							//printf("N_id: %d, N_color: %d\n",vertices[index].neighboursIndices[j], vertices[vertices[index].neighboursIndices[j]].color); // UNCOMMENT if you need to see this additional information.
 							if(vertices[vertices[index].neighboursIndices[j]].count > 0)
 								vertices[vertices[index].neighboursIndices[j]].count--;
 						}
@@ -287,26 +294,20 @@ int main(int argc, char **argv) {
 			exit(EXIT_FAILURE);
 		}
 
-		printf("DELETED ALLOCATED MEMORY FOR DEVICE\n");
+		//printf("DELETED ALLOCATED MEMORY FOR DEVICE\n"); // UNCOMMENT if you need to see this additional information.
 
 		// Free host memory
 		free(h_neighborsOfAllVertices);
 		free(h_neighborSizeArray);
 		free(h_colors_found);
-		printf("DELETED ALLOCATED MEMORY FOR HOST \n");
+		//printf("DELETED ALLOCATED MEMORY FOR HOST \n"); // UNCOMMENT if you need to see this additional information.
 
 	}
-	/*
-	cudaEventRecord(stop);
-
-	cudaEventSynchronize(stop);
-	float milliseconds = 0;
-	cudaEventElapsedTime(&milliseconds, start, stop);
-	*/
+	
 	printf("-----ELAPSED TIME ---> %f ms\n", total_elapsed_time);
 	printf("max color value: %d\n", max_color);
 
-	printf("DONE\n");
+	//printf("DONE\n"); // UNCOMMENT if you need to see this additional information.
 
 	return 0;
 	
