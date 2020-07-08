@@ -11,4 +11,5 @@ Also, I have modified it according to the current project needs, so you can chec
 
 I have used the "rtclock" function to measure the execution time of graph coloring from the following link : https://github.com/chenxuhao/csrcolor/blob/master/include/common.h
 
+To run the program, please refer to "test.cu". You can see the compilation commands under the comment line "---COMPILATION COMMANDS----".
 For graph samples, please refer to the paper.
