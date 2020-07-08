@@ -10,3 +10,5 @@ I have used the "mtx2csr" function from the following link to convert ".mtx" fil
 Also, I have modified it according to the current project needs, so you can check the details.
 
 I have used the "rtclock" function to measure the execution time of graph coloring from the following link : https://github.com/chenxuhao/csrcolor/blob/master/include/common.h
+
+For graph samples, please refer to the paper.
