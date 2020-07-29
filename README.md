@@ -11,17 +11,17 @@ Also, I have modified it according to the current project needs, so you can chec
 
 I have used the "rtclock" function to measure the execution time of graph coloring from the following link : https://github.com/chenxuhao/csrcolor/blob/master/include/common.h
 
-#To compile the program please use/edit the make file.
+* To compile the program please use/edit the make file.
 Please update CUDA_PATH variable with your current CUDA library path.
 Example make commands:
 "make all"
 "make test.o"
 "make main.o"
 
-#To delete all program and binaries:
+* To delete all program and binaries:
 "make clean"
 
-#To run the program:
+* To run the program:
 "./graphColoring/build/TEST_directed.o graphColoring/Matrices/nonsym_r3_a11.mtx"
 "./graphColoring/build/TEST_undirected.o graphColoring/Matrices/nonsym_r3_a11.mtx"
 
